@@ -8,7 +8,7 @@ const App = () => {
         expenses: [],
         currentStep: 0
     });
-    
+
     const [currentMonth, setCurrentMonth] = React.useState(new Date().getMonth());
     const [currentYear, setCurrentYear] = React.useState(new Date().getFullYear());
     // State for mobile menu toggle
@@ -39,7 +39,7 @@ const App = () => {
 
     // Navigate to a specific step
     const navigateToStep = (step) => {
-        setFormData({...formData, currentStep: step});
+        setFormData({ ...formData, currentStep: step });
         setMobileMenuOpen(false); // Close mobile menu after navigation
     };
 
@@ -51,8 +51,8 @@ const App = () => {
                 position: 'relative'
             }}>
                 {/* Hamburger icon for mobile */}
-                <div 
-                    className="mobile-menu-toggle" 
+                <div
+                    className="mobile-menu-toggle"
                     onClick={toggleMobileMenu}
                     style={{
                         display: 'none', // Hide on desktop
@@ -89,7 +89,7 @@ const App = () => {
                         transition: 'all 0.3s ease'
                     }}></div>
                 </div>
-                
+
                 {/* Navigation menu - desktop and mobile */}
                 <nav style={{
                     backgroundColor: '#f5f5f5',
@@ -117,7 +117,7 @@ const App = () => {
                                 textAlign: 'center'
                             }
                         }}>
-                            <a 
+                            <a
                                 onClick={() => navigateToStep(0)}
                                 style={{
                                     textDecoration: 'none',
@@ -138,7 +138,7 @@ const App = () => {
                                 textAlign: 'center'
                             }
                         }}>
-                            <a 
+                            <a
                                 onClick={() => navigateToStep(0.5)}
                                 style={{
                                     textDecoration: 'none',
@@ -159,7 +159,7 @@ const App = () => {
                                 textAlign: 'center'
                             }
                         }}>
-                            <a 
+                            <a
                                 onClick={() => navigateToStep(1)}
                                 style={{
                                     textDecoration: 'none',
@@ -188,7 +188,7 @@ const App = () => {
             expenses: data.expenses || [],
             currentStep: 1
         };
-        
+
         setFormData(updatedData);
         localStorage.setItem('budgetData', JSON.stringify(updatedData));
         console.log("Questionnaire data received:", data);
@@ -216,14 +216,14 @@ const App = () => {
     // Format day with appropriate suffix
     const formatDayWithSuffix = (day) => {
         if (!day) return '';
-        
+
         const num = parseInt(day);
         if (isNaN(num)) return day;
-        
+
         if (num >= 11 && num <= 13) {
             return num + 'th';
         }
-        
+
         switch (num % 10) {
             case 1: return num + 'st';
             case 2: return num + 'nd';
@@ -241,32 +241,32 @@ const App = () => {
 
         // Get number of days in current month
         const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
-        
+
         // Get first day of month (0 = Sunday, 1 = Monday, etc.)
         const firstDayOfMonth = new Date(currentYear, currentMonth, 1).getDay();
-        
+
         // Array of day numbers (1 to daysInMonth)
         const days = Array.from({ length: daysInMonth }, (_, i) => i + 1);
-        
+
         // Add empty cells for days before first day of month
         const emptyCells = Array.from({ length: firstDayOfMonth }, (_, i) => null);
-        
+
         // Combine empty cells and days
         const allCells = [...emptyCells, ...days];
-        
+
         // Calculate expense threshold for color-coding
         // Sort expenses by amount for threshold calculation
         const sortedExpenseAmounts = [...formData.expenses]
             .map(exp => parseFloat(exp.amount))
             .sort((a, b) => a - b);
-        
+
         // Use median as threshold if we have enough expenses
         let threshold = 100; // Default threshold
         if (sortedExpenseAmounts.length > 0) {
             const midIndex = Math.floor(sortedExpenseAmounts.length / 2);
             threshold = sortedExpenseAmounts[midIndex];
         }
-        
+
         // Get expenses for a specific day
         const getExpensesForDay = (day) => {
             return formData.expenses.filter(expense => {
@@ -276,20 +276,20 @@ const App = () => {
                 return parseInt(expense.dueDate) === day;
             });
         };
-        
+
         // Get color for a day based on expenses
         const getColorForDay = (day) => {
             const dayExpenses = getExpensesForDay(day);
             if (dayExpenses.length === 0) return '';
-            
+
             const totalAmount = dayExpenses.reduce((sum, exp) => sum + parseFloat(exp.amount), 0);
             return totalAmount > threshold ? '#2196f3' : '#4caf50'; // Blue for larger, green for smaller
         };
-        
+
         return (
             <div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px' }}>
-                    <button 
+                    <button
                         onClick={handlePrevMonth}
                         style={{
                             background: 'none',
@@ -301,7 +301,7 @@ const App = () => {
                         &lt;
                     </button>
                     <h3 style={{ margin: 0 }}>{monthNames[currentMonth]} {currentYear}</h3>
-                    <button 
+                    <button
                         onClick={handleNextMonth}
                         style={{
                             background: 'none',
@@ -313,18 +313,18 @@ const App = () => {
                         &gt;
                     </button>
                 </div>
-                
-                <div style={{ 
-                    display: 'grid', 
+
+                <div style={{
+                    display: 'grid',
                     gridTemplateColumns: 'repeat(7, 1fr)',
                     gap: '5px',
                     marginBottom: '30px'
                 }}>
                     {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => (
-                        <div 
-                            key={day} 
-                            style={{ 
-                                textAlign: 'center', 
+                        <div
+                            key={day}
+                            style={{
+                                textAlign: 'center',
                                 fontWeight: 'bold',
                                 padding: '10px',
                                 backgroundColor: '#f5f5f5',
@@ -334,20 +334,20 @@ const App = () => {
                             {day}
                         </div>
                     ))}
-                    
+
                     {allCells.map((day, index) => {
                         if (day === null) {
                             return <div key={`empty-${index}`} style={{ padding: '10px' }}></div>;
                         }
-                        
+
                         const color = getColorForDay(day);
                         const dayExpenses = getExpensesForDay(day);
                         const totalAmount = dayExpenses.reduce((sum, exp) => sum + parseFloat(exp.amount), 0);
-                        
+
                         return (
-                            <div 
-                                key={`day-${day}`} 
-                                style={{ 
+                            <div
+                                key={`day-${day}`}
+                                style={{
                                     position: 'relative',
                                     height: '80px',
                                     border: '1px solid #ddd',
@@ -377,7 +377,7 @@ const App = () => {
                         );
                     })}
                 </div>
-                
+
                 <div style={{ marginBottom: '10px' }}>
                     <div style={{ display: 'flex', alignItems: 'center', marginBottom: '5px' }}>
                         <div style={{ width: '15px', height: '15px', backgroundColor: '#4caf50', marginRight: '5px' }}></div>
@@ -395,10 +395,14 @@ const App = () => {
     // Pie Chart Component
     const PieChart = () => {
         const canvasRef = React.useRef(null);
-        
+
         React.useEffect(() => {
             if (!formData.expenses || formData.expenses.length === 0) return;
-            
+
+            // Calculate total expenses first
+            const totalExpenses = formData.expenses.reduce((sum, expense) =>
+                sum + parseFloat(expense.amount), 0);
+
             // Group expenses by category
             const expensesByCategory = formData.expenses.reduce((acc, expense) => {
                 const category = expense.name;
@@ -408,73 +412,73 @@ const App = () => {
                 acc[category] += parseFloat(expense.amount);
                 return acc;
             }, {});
-            
+
             // Convert to format needed for chart
             const labels = Object.keys(expensesByCategory);
             const data = Object.values(expensesByCategory);
-            
+
             // Generate colors
             const colors = labels.map((_, index) => {
                 const hue = (index * 137) % 360; // Golden ratio to create visually distinct colors
                 return `hsl(${hue}, 70%, 60%)`;
             });
-            
+
             // Clear previous chart if it exists
             const ctx = canvasRef.current.getContext('2d');
             ctx.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);
-            
+
             // Draw pie chart
-            const total = data.reduce((sum, value) => sum + value, 0);
             let startAngle = 0;
-            
-            // Draw slices
+
+            // Draw slices - ensuring each is proportional to total expenses
             data.forEach((value, index) => {
-                const sliceAngle = (value / total) * 2 * Math.PI;
-                
+                // Calculate the slice angle as proportion of total expenses
+                const sliceAngle = (value / totalExpenses) * 2 * Math.PI;
+
                 ctx.beginPath();
                 ctx.moveTo(150, 150);
                 ctx.arc(150, 150, 100, startAngle, startAngle + sliceAngle);
                 ctx.closePath();
-                
+
                 ctx.fillStyle = colors[index];
                 ctx.fill();
-                
+
                 // Draw labels if slice is large enough
                 if (sliceAngle > 0.2) {
                     const labelAngle = startAngle + sliceAngle / 2;
                     const labelX = 150 + Math.cos(labelAngle) * 70;
                     const labelY = 150 + Math.sin(labelAngle) * 70;
-                    
+
                     ctx.fillStyle = 'white';
                     ctx.font = '12px Arial';
                     ctx.textAlign = 'center';
                     ctx.textBaseline = 'middle';
-                    ctx.fillText(`${Math.round((value / total) * 100)}%`, labelX, labelY);
+                    ctx.fillText(`${Math.round((value / totalExpenses) * 100)}%`, labelX, labelY);
                 }
-                
+
                 startAngle += sliceAngle;
             });
-            
+
             // Draw legend
             const legendY = 310;
             labels.forEach((label, index) => {
                 const amount = data[index];
-                const percentage = Math.round((amount / total) * 100);
+                const percentage = Math.round((amount / totalExpenses) * 100);
                 const x = 20 + (index % 2) * 160;
                 const y = legendY + Math.floor(index / 2) * 25;
-                
+
                 ctx.fillStyle = colors[index];
                 ctx.fillRect(x, y, 15, 15);
-                
+
                 ctx.fillStyle = 'black';
                 ctx.font = '12px Arial';
                 ctx.textAlign = 'left';
                 ctx.textBaseline = 'middle';
                 ctx.fillText(`${label} - $${amount.toFixed(2)} (${percentage}%)`, x + 20, y + 7);
             });
-            
+
         }, [formData.expenses]);
-        
+
         return (
             <div>
                 <h3>Monthly Expenses Breakdown</h3>
@@ -501,19 +505,19 @@ const App = () => {
             case 1:
                 const totalExpenses = calculateTotalExpenses();
                 const remainingAmount = parseFloat(formData.paychequeAmount) - totalExpenses;
-                
+
                 return (
                     <div>
                         <h2>Budget Summary</h2>
-                        <div style={{ 
-                            display: 'grid', 
+                        <div style={{
+                            display: 'grid',
                             gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
                             gap: '15px',
                             marginBottom: '20px'
                         }}>
-                            <div style={{ 
-                                border: '1px solid #ddd', 
-                                borderRadius: '4px', 
+                            <div style={{
+                                border: '1px solid #ddd',
+                                borderRadius: '4px',
                                 padding: '15px',
                                 backgroundColor: '#f9f9f9'
                             }}>
@@ -525,10 +529,10 @@ const App = () => {
                                     Deposited: {formData.depositDates}
                                 </p>
                             </div>
-                            
-                            <div style={{ 
-                                border: '1px solid #ddd', 
-                                borderRadius: '4px', 
+
+                            <div style={{
+                                border: '1px solid #ddd',
+                                borderRadius: '4px',
                                 padding: '15px',
                                 backgroundColor: '#f9f9f9'
                             }}>
@@ -540,17 +544,17 @@ const App = () => {
                                     {formData.expenses.length} monthly payments
                                 </p>
                             </div>
-                            
-                            <div style={{ 
-                                border: '1px solid #ddd', 
-                                borderRadius: '4px', 
+
+                            <div style={{
+                                border: '1px solid #ddd',
+                                borderRadius: '4px',
                                 padding: '15px',
                                 backgroundColor: '#f9f9f9'
                             }}>
                                 <h3 style={{ margin: '0 0 10px 0' }}>Remaining</h3>
-                                <p style={{ 
-                                    fontSize: '24px', 
-                                    fontWeight: 'bold', 
+                                <p style={{
+                                    fontSize: '24px',
+                                    fontWeight: 'bold',
                                     color: remainingAmount >= 0 ? '#4caf50' : '#f44336',
                                     margin: '0'
                                 }}>
@@ -570,21 +574,28 @@ const App = () => {
                                         <tr style={{ borderBottom: '1px solid #ddd' }}>
                                             <th style={{ textAlign: 'left', padding: '8px' }}>Expense</th>
                                             <th style={{ textAlign: 'left', padding: '8px' }}>Amount</th>
+                                            <th style={{ textAlign: 'left', padding: '8px' }}>%</th>
                                             <th style={{ textAlign: 'left', padding: '8px' }}>Due Date</th>
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        {formData.expenses.map((expense, index) => (
-                                            <tr key={index} style={{ borderBottom: '1px solid #ddd' }}>
-                                                <td style={{ padding: '8px' }}>{expense.name}</td>
-                                                <td style={{ padding: '8px' }}>${parseFloat(expense.amount).toFixed(2)}</td>
-                                                <td style={{ padding: '8px' }}>{
-                                                    expense.dueDate === 'Last day' 
-                                                        ? 'Last day of month' 
-                                                        : formatDayWithSuffix(expense.dueDate) || 'Not specified'
-                                                }</td>
-                                            </tr>
-                                        ))}
+                                        {formData.expenses.map((expense, index) => {
+                                            // Calculate the percentage of total expenses
+                                            const percentage = (parseFloat(expense.amount) / totalExpenses) * 100;
+
+                                            return (
+                                                <tr key={index} style={{ borderBottom: '1px solid #ddd' }}>
+                                                    <td style={{ padding: '8px' }}>{expense.name}</td>
+                                                    <td style={{ padding: '8px' }}>${parseFloat(expense.amount).toFixed(2)}</td>
+                                                    <td style={{ padding: '8px' }}>{percentage.toFixed(1)}%</td>
+                                                    <td style={{ padding: '8px' }}>{
+                                                        expense.dueDate === 'Last day'
+                                                            ? 'Last day of month'
+                                                            : formatDayWithSuffix(expense.dueDate) || 'Not specified'
+                                                    }</td>
+                                                </tr>
+                                            );
+                                        })}
                                     </tbody>
                                 </table>
                             </div>
@@ -592,7 +603,7 @@ const App = () => {
 
                         <h3>Monthly Payment Schedule</h3>
                         <Calendar />
-                        
+
                         <PieChart />
 
                         <button

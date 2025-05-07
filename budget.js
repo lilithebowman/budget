@@ -11,6 +11,8 @@ const App = () => {
     
     const [currentMonth, setCurrentMonth] = React.useState(new Date().getMonth());
     const [currentYear, setCurrentYear] = React.useState(new Date().getFullYear());
+    // State for mobile menu toggle
+    const [mobileMenuOpen, setMobileMenuOpen] = React.useState(false);
 
     // Load data from localStorage on initial render
     React.useEffect(() => {
@@ -29,6 +31,153 @@ const App = () => {
     React.useEffect(() => {
         localStorage.setItem('budgetData', JSON.stringify(formData));
     }, [formData]);
+
+    // Toggle mobile menu
+    const toggleMobileMenu = () => {
+        setMobileMenuOpen(!mobileMenuOpen);
+    };
+
+    // Navigate to a specific step
+    const navigateToStep = (step) => {
+        setFormData({...formData, currentStep: step});
+        setMobileMenuOpen(false); // Close mobile menu after navigation
+    };
+
+    // Navigation Component
+    const Navigation = () => {
+        return (
+            <div style={{
+                marginBottom: '20px',
+                position: 'relative'
+            }}>
+                {/* Hamburger icon for mobile */}
+                <div 
+                    className="mobile-menu-toggle" 
+                    onClick={toggleMobileMenu}
+                    style={{
+                        display: 'none', // Hide on desktop
+                        position: 'absolute',
+                        right: '10px',
+                        top: '10px',
+                        zIndex: 100,
+                        cursor: 'pointer',
+                        padding: '5px',
+                        '@media (max-width: 768px)': {
+                            display: 'block' // Show on mobile
+                        }
+                    }}
+                >
+                    <div style={{
+                        width: '25px',
+                        height: '3px',
+                        backgroundColor: '#333',
+                        margin: '5px 0',
+                        transition: 'all 0.3s ease'
+                    }}></div>
+                    <div style={{
+                        width: '25px',
+                        height: '3px',
+                        backgroundColor: '#333',
+                        margin: '5px 0',
+                        transition: 'all 0.3s ease'
+                    }}></div>
+                    <div style={{
+                        width: '25px',
+                        height: '3px',
+                        backgroundColor: '#333',
+                        margin: '5px 0',
+                        transition: 'all 0.3s ease'
+                    }}></div>
+                </div>
+                
+                {/* Navigation menu - desktop and mobile */}
+                <nav style={{
+                    backgroundColor: '#f5f5f5',
+                    padding: '10px 0',
+                    borderRadius: '4px',
+                    display: 'block', // Always visible on desktop
+                    '@media (max-width: 768px)': {
+                        display: mobileMenuOpen ? 'block' : 'none' // Toggle on mobile
+                    }
+                }}>
+                    <ul style={{
+                        listStyle: 'none',
+                        padding: 0,
+                        margin: 0,
+                        display: 'flex',
+                        justifyContent: 'center',
+                        '@media (max-width: 768px)': {
+                            flexDirection: 'column'
+                        }
+                    }}>
+                        <li style={{
+                            margin: '0 15px',
+                            '@media (max-width: 768px)': {
+                                margin: '10px 0',
+                                textAlign: 'center'
+                            }
+                        }}>
+                            <a 
+                                onClick={() => navigateToStep(0)}
+                                style={{
+                                    textDecoration: 'none',
+                                    color: formData.currentStep === 0 ? '#1976d2' : '#333',
+                                    fontWeight: formData.currentStep === 0 ? 'bold' : 'normal',
+                                    cursor: 'pointer',
+                                    padding: '8px 12px',
+                                    borderBottom: formData.currentStep === 0 ? '2px solid #1976d2' : 'none'
+                                }}
+                            >
+                                Income Information
+                            </a>
+                        </li>
+                        <li style={{
+                            margin: '0 15px',
+                            '@media (max-width: 768px)': {
+                                margin: '10px 0',
+                                textAlign: 'center'
+                            }
+                        }}>
+                            <a 
+                                onClick={() => navigateToStep(0.5)}
+                                style={{
+                                    textDecoration: 'none',
+                                    color: formData.currentStep === 0.5 ? '#1976d2' : '#333',
+                                    fontWeight: formData.currentStep === 0.5 ? 'bold' : 'normal',
+                                    cursor: 'pointer',
+                                    padding: '8px 12px',
+                                    borderBottom: formData.currentStep === 0.5 ? '2px solid #1976d2' : 'none'
+                                }}
+                            >
+                                Expenses
+                            </a>
+                        </li>
+                        <li style={{
+                            margin: '0 15px',
+                            '@media (max-width: 768px)': {
+                                margin: '10px 0',
+                                textAlign: 'center'
+                            }
+                        }}>
+                            <a 
+                                onClick={() => navigateToStep(1)}
+                                style={{
+                                    textDecoration: 'none',
+                                    color: formData.currentStep === 1 ? '#1976d2' : '#333',
+                                    fontWeight: formData.currentStep === 1 ? 'bold' : 'normal',
+                                    cursor: 'pointer',
+                                    padding: '8px 12px',
+                                    borderBottom: formData.currentStep === 1 ? '2px solid #1976d2' : 'none'
+                                }}
+                            >
+                                Budget Summary
+                            </a>
+                        </li>
+                    </ul>
+                </nav>
+            </div>
+        );
+    };
 
     // Handle form data updates from questionnaire
     const handleQuestionnaireSubmit = (data) => {
@@ -342,11 +491,13 @@ const App = () => {
         return formData.expenses.reduce((sum, expense) => sum + parseFloat(expense.amount), 0);
     };
 
-    // Render different forms based on current step
+    // Modified renderCurrentForm function to handle the new step for expenses
     const renderCurrentForm = () => {
         switch (formData.currentStep) {
             case 0:
-                return <Questionnaire onSubmit={handleQuestionnaireSubmit} />;
+                return <Questionnaire onSubmit={handleQuestionnaireSubmit} initialStep={1} />;
+            case 0.5:
+                return <Questionnaire onSubmit={handleQuestionnaireSubmit} initialStep={2} />;
             case 1:
                 const totalExpenses = calculateTotalExpenses();
                 const remainingAmount = parseFloat(formData.paychequeAmount) - totalExpenses;
@@ -461,13 +612,14 @@ const App = () => {
                     </div>
                 );
             default:
-                return <Questionnaire onSubmit={handleQuestionnaireSubmit} />;
+                return <Questionnaire onSubmit={handleQuestionnaireSubmit} initialStep={1} />;
         }
     };
 
     return (
         <div style={{ maxWidth: '800px', margin: '0 auto' }}>
             <h1>Personal Budget Planner</h1>
+            <Navigation />
             <div>{renderCurrentForm()}</div>
         </div>
     );

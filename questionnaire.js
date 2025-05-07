@@ -1,6 +1,6 @@
 // Questionnaire component for collecting initial budget information
 
-const Questionnaire = ({ onSubmit }) => {
+const Questionnaire = ({ onSubmit, initialStep }) => {
 	// State for form fields
 	const [formValues, setFormValues] = React.useState({
 		paychequeAmount: '',
@@ -16,7 +16,33 @@ const Questionnaire = ({ onSubmit }) => {
 	});
 
 	// Track the current step (step 1: income, step 2: expenses)
-	const [currentStep, setCurrentStep] = React.useState(1);
+	const [currentStep, setCurrentStep] = React.useState(initialStep || 1);
+
+	React.useEffect(() => {
+		// Update step when initialStep prop changes
+		if (initialStep) {
+			setCurrentStep(initialStep);
+		}
+	}, [initialStep]);
+
+	// Load saved data if available
+	React.useEffect(() => {
+		const savedData = localStorage.getItem('budgetData');
+		if (savedData) {
+			try {
+				const parsedData = JSON.parse(savedData);
+				if (parsedData.paychequeAmount || parsedData.depositDates || parsedData.expenses) {
+					setFormValues({
+						paychequeAmount: parsedData.paychequeAmount || '',
+						depositDates: parsedData.depositDates || '',
+						expenses: parsedData.expenses || []
+					});
+				}
+			} catch (error) {
+				console.error('Error loading saved data in questionnaire:', error);
+			}
+		}
+	}, []);
 
 	// State for current expense being added
 	const [currentExpense, setCurrentExpense] = React.useState({
@@ -524,6 +550,37 @@ const Questionnaire = ({ onSubmit }) => {
 		</div>
 	);
 
+	// Modify this to a proper CSS media query for mobile
+	const mobileStyles = `
+        @media (max-width: 768px) {
+            .mobile-menu-toggle {
+                display: block !important;
+            }
+            
+            nav {
+                display: none;
+            }
+            
+            nav.open {
+                display: block;
+            }
+            
+            nav ul {
+                flex-direction: column;
+            }
+            
+            nav ul li {
+                margin: 10px 0;
+                text-align: center;
+            }
+        }
+    `;
+
 	// Render the current step
-	return currentStep === 1 ? renderIncomeForm() : renderExpensesForm();
+	return (
+		<>
+			<style>{mobileStyles}</style>
+			{currentStep === 1 ? renderIncomeForm() : renderExpensesForm()}
+		</>
+	);
 };

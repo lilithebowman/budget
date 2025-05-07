@@ -496,34 +496,65 @@ const App = () => {
                 startAngle += sliceAngle;
             });
 
-            // Draw legend with improved spacing
+            // Improved legend with wider spacing and single column for many items
             const legendY = 310;
-            const leftColumnX = 10;      // Left column starting position
-            const rightColumnX = 180;    // Right column starting position (increased from 160)
-            const legendSpacing = 28;    // Increased vertical spacing between legend items
+            let legendSpacing = 28;  // Vertical spacing between legend items
 
-            labels.forEach((label, index) => {
-                const amount = data[index];
-                const percentage = percentages[index];
+            // Determine if we need a single column or two columns based on number of items
+            let useOneColumn = labels.length > 6;
 
-                // Determine column position
-                const x = index % 2 === 0 ? leftColumnX : rightColumnX;
-                const y = legendY + Math.floor(index / 2) * legendSpacing;
+            // If using one column, use the full width, otherwise use two columns
+            if (useOneColumn) {
+                // Single column layout - center aligned
+                const columnX = 20;
 
-                // Draw color box
-                ctx.fillStyle = colors[index];
-                ctx.fillRect(x, y, 15, 15);
+                labels.forEach((label, index) => {
+                    const amount = data[index];
+                    const percentage = percentages[index];
+                    const y = legendY + (index * legendSpacing);
 
-                // Use a smaller font and ellipsis for long labels
-                ctx.fillStyle = 'black';
-                ctx.font = '12px Arial';
-                ctx.textAlign = 'left';
-                ctx.textBaseline = 'middle';
+                    // Draw color box
+                    ctx.fillStyle = colors[index];
+                    ctx.fillRect(columnX, y, 15, 15);
 
-                // Format the text with proper spacing
-                const displayLabel = label.length > 14 ? label.substring(0, 12) + '...' : label;
-                ctx.fillText(`${displayLabel} - $${amount.toFixed(2)} (${percentage.toFixed(1)}%)`, x + 20, y + 7);
-            });
+                    // Use a smaller font and ellipsis for long labels
+                    ctx.fillStyle = 'black';
+                    ctx.font = '12px Arial';
+                    ctx.textAlign = 'left';
+                    ctx.textBaseline = 'middle';
+
+                    // Format the text with proper spacing
+                    const displayLabel = label.length > 18 ? label.substring(0, 16) + '...' : label;
+                    ctx.fillText(`${displayLabel} - $${amount.toFixed(2)} (${percentage.toFixed(1)}%)`, columnX + 20, y + 7);
+                });
+            } else {
+                // Two column layout with improved spacing
+                const leftColumnX = 10;
+                const rightColumnX = 220;  // Increased from 180 to 220 for more space
+
+                labels.forEach((label, index) => {
+                    const amount = data[index];
+                    const percentage = percentages[index];
+
+                    // Determine column position
+                    const x = index % 2 === 0 ? leftColumnX : rightColumnX;
+                    const y = legendY + Math.floor(index / 2) * legendSpacing;
+
+                    // Draw color box
+                    ctx.fillStyle = colors[index];
+                    ctx.fillRect(x, y, 15, 15);
+
+                    // Use a smaller font and more aggressive ellipsis for long labels
+                    ctx.fillStyle = 'black';
+                    ctx.font = '12px Arial';
+                    ctx.textAlign = 'left';
+                    ctx.textBaseline = 'middle';
+
+                    // More aggressive truncation to prevent overlap
+                    const displayLabel = label.length > 12 ? label.substring(0, 10) + '...' : label;
+                    ctx.fillText(`${displayLabel} - $${amount.toFixed(2)} (${percentage.toFixed(1)}%)`, x + 20, y + 7);
+                });
+            }
 
         }, [formData.expenses]);
 
@@ -531,7 +562,7 @@ const App = () => {
             <div>
                 <h3>Monthly Expenses Breakdown</h3>
                 <div style={{ textAlign: 'center', marginBottom: '30px' }}>
-                    <canvas ref={canvasRef} width="350" height={400} style={{ maxWidth: '100%' }} />
+                    <canvas ref={canvasRef} width="450" height={400} style={{ maxWidth: '100%' }} />
                 </div>
             </div>
         );

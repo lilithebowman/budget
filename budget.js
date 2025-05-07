@@ -418,25 +418,41 @@ const App = () => {
         const canvasRef = React.useRef(null);
 
         React.useEffect(() => {
-            if (!formData.expenses || formData.expenses.length === 0) return;
+            // Load the localStorage data
+            const savedData = localStorage.getItem('budgetData');
+            const parsedData = JSON.parse(savedData);
+            // Check if there are expenses to display
+            if (!parsedData.expenses || parsedData.expenses.length === 0) return;
 
-            // Calculate total expenses first
-            const totalExpenses = formData.expenses.reduce((sum, expense) =>
+            // Calculate total expenses
+            const totalAmount = parsedData.expenses.reduce((sum, expense) =>
                 sum + parseFloat(expense.amount), 0);
 
             // Group expenses by category
-            const expensesByCategory = formData.expenses.reduce((acc, expense) => {
+            const expensesByCategory = {};
+            const percentagesByCategory = {};
+
+            parsedData.expenses.forEach(expense => {
                 const category = expense.name;
-                if (!acc[category]) {
-                    acc[category] = 0;
+                const amount = parseFloat(expense.amount);
+                const percentage = parseFloat(expense.percentage);
+
+                if (!expensesByCategory[category]) {
+                    expensesByCategory[category] = 0;
                 }
-                acc[category] += parseFloat(expense.amount);
-                return acc;
-            }, {});
+
+                if (!percentagesByCategory[category]) {
+                    percentagesByCategory[category] = 0;
+                }
+
+                expensesByCategory[category] += amount;
+                percentagesByCategory[category] += percentage;
+            });
 
             // Convert to format needed for chart
             const labels = Object.keys(expensesByCategory);
             const data = Object.values(expensesByCategory);
+            const percentages = Object.values(percentagesByCategory);
 
             // Generate colors
             const colors = labels.map((_, index) => {
@@ -451,10 +467,10 @@ const App = () => {
             // Draw pie chart
             let startAngle = 0;
 
-            // Draw slices - ensuring each is proportional to total expenses
-            data.forEach((value, index) => {
-                // Calculate the slice angle as proportion of total expenses
-                const sliceAngle = (value / totalExpenses) * 2 * Math.PI;
+            // Draw slices
+            percentages.forEach((percentage, index) => {
+                // Calculate slice angle based on the percentage
+                const sliceAngle = (percentage / 100) * 2 * Math.PI;
 
                 ctx.beginPath();
                 ctx.moveTo(150, 150);
@@ -474,7 +490,7 @@ const App = () => {
                     ctx.font = '12px Arial';
                     ctx.textAlign = 'center';
                     ctx.textBaseline = 'middle';
-                    ctx.fillText(`${Math.round((value / totalExpenses) * 100)}%`, labelX, labelY);
+                    ctx.fillText(`${Math.round(percentage)}%`, labelX, labelY);
                 }
 
                 startAngle += sliceAngle;
@@ -484,7 +500,7 @@ const App = () => {
             const legendY = 310;
             labels.forEach((label, index) => {
                 const amount = data[index];
-                const percentage = Math.round((amount / totalExpenses) * 100);
+                const percentage = percentages[index];
                 const x = 20 + (index % 2) * 160;
                 const y = legendY + Math.floor(index / 2) * 25;
 
@@ -495,7 +511,7 @@ const App = () => {
                 ctx.font = '12px Arial';
                 ctx.textAlign = 'left';
                 ctx.textBaseline = 'middle';
-                ctx.fillText(`${label} - $${amount.toFixed(2)} (${percentage}%)`, x + 20, y + 7);
+                ctx.fillText(`${label} - $${amount.toFixed(2)} (${percentage.toFixed(1)}%)`, x + 20, y + 7);
             });
 
         }, [formData.expenses]);

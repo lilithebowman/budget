@@ -496,22 +496,33 @@ const App = () => {
                 startAngle += sliceAngle;
             });
 
-            // Draw legend
+            // Draw legend with improved spacing
             const legendY = 310;
+            const leftColumnX = 10;      // Left column starting position
+            const rightColumnX = 180;    // Right column starting position (increased from 160)
+            const legendSpacing = 28;    // Increased vertical spacing between legend items
+
             labels.forEach((label, index) => {
                 const amount = data[index];
                 const percentage = percentages[index];
-                const x = 20 + (index % 2) * 160;
-                const y = legendY + Math.floor(index / 2) * 25;
 
+                // Determine column position
+                const x = index % 2 === 0 ? leftColumnX : rightColumnX;
+                const y = legendY + Math.floor(index / 2) * legendSpacing;
+
+                // Draw color box
                 ctx.fillStyle = colors[index];
                 ctx.fillRect(x, y, 15, 15);
 
+                // Use a smaller font and ellipsis for long labels
                 ctx.fillStyle = 'black';
                 ctx.font = '12px Arial';
                 ctx.textAlign = 'left';
                 ctx.textBaseline = 'middle';
-                ctx.fillText(`${label} - $${amount.toFixed(2)} (${percentage.toFixed(1)}%)`, x + 20, y + 7);
+
+                // Format the text with proper spacing
+                const displayLabel = label.length > 14 ? label.substring(0, 12) + '...' : label;
+                ctx.fillText(`${displayLabel} - $${amount.toFixed(2)} (${percentage.toFixed(1)}%)`, x + 20, y + 7);
             });
 
         }, [formData.expenses]);
@@ -520,7 +531,7 @@ const App = () => {
             <div>
                 <h3>Monthly Expenses Breakdown</h3>
                 <div style={{ textAlign: 'center', marginBottom: '30px' }}>
-                    <canvas ref={canvasRef} width="300" height={400} style={{ maxWidth: '100%' }} />
+                    <canvas ref={canvasRef} width="350" height={400} style={{ maxWidth: '100%' }} />
                 </div>
             </div>
         );
@@ -646,6 +657,7 @@ const App = () => {
 
                         <button
                             style={{
+                                display: 'none',
                                 backgroundColor: '#1976d2',
                                 color: 'white',
                                 padding: '10px 20px',

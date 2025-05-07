@@ -43,6 +43,24 @@ const App = () => {
         setMobileMenuOpen(false); // Close mobile menu after navigation
     };
 
+    // Add a function to calculate and attach percentages to expenses
+    const calculateExpensePercentages = (expenses) => {
+        if (!expenses || expenses.length === 0) return expenses;
+
+        // Calculate total
+        const totalExpenses = expenses.reduce((sum, expense) =>
+            sum + parseFloat(expense.amount), 0);
+
+        // Add percentage to each expense
+        return expenses.map(expense => {
+            const percentage = (parseFloat(expense.amount) / totalExpenses) * 100;
+            return {
+                ...expense,
+                percentage: percentage.toFixed(1)
+            };
+        });
+    };
+
     // Navigation Component
     const Navigation = () => {
         return (
@@ -181,11 +199,14 @@ const App = () => {
 
     // Handle form data updates from questionnaire
     const handleQuestionnaireSubmit = (data) => {
+        // Calculate percentages for expenses
+        const expensesWithPercentages = calculateExpensePercentages(data.expenses || []);
+
         const updatedData = {
             ...formData,
             paychequeAmount: data.paychequeAmount,
             depositDates: data.depositDates,
-            expenses: data.expenses || [],
+            expenses: expensesWithPercentages,
             currentStep: 1
         };
 
@@ -580,14 +601,15 @@ const App = () => {
                                     </thead>
                                     <tbody>
                                         {formData.expenses.map((expense, index) => {
-                                            // Calculate the percentage of total expenses
-                                            const percentage = (parseFloat(expense.amount) / totalExpenses) * 100;
+                                            // Use stored percentage if available, otherwise calculate it
+                                            const percentage = expense.percentage ||
+                                                ((parseFloat(expense.amount) / totalExpenses) * 100).toFixed(1);
 
                                             return (
                                                 <tr key={index} style={{ borderBottom: '1px solid #ddd' }}>
                                                     <td style={{ padding: '8px' }}>{expense.name}</td>
                                                     <td style={{ padding: '8px' }}>${parseFloat(expense.amount).toFixed(2)}</td>
-                                                    <td style={{ padding: '8px' }}>{percentage.toFixed(1)}%</td>
+                                                    <td style={{ padding: '8px' }}>{percentage}%</td>
                                                     <td style={{ padding: '8px' }}>{
                                                         expense.dueDate === 'Last day'
                                                             ? 'Last day of month'

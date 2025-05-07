@@ -18,6 +18,9 @@ const Questionnaire = ({ onSubmit, initialStep }) => {
 	// Track the current step (step 1: income, step 2: expenses)
 	const [currentStep, setCurrentStep] = React.useState(initialStep || 1);
 
+	// Track if we're in edit mode and which expense is being edited
+	const [editingExpenseIndex, setEditingExpenseIndex] = React.useState(-1);
+
 	React.useEffect(() => {
 		// Update step when initialStep prop changes
 		if (initialStep) {
@@ -44,7 +47,7 @@ const Questionnaire = ({ onSubmit, initialStep }) => {
 		}
 	}, []);
 
-	// State for current expense being added
+	// State for current expense being added/edited
 	const [currentExpense, setCurrentExpense] = React.useState({
 		name: '',
 		customName: '',
@@ -104,8 +107,44 @@ const Questionnaire = ({ onSubmit, initialStep }) => {
 		setShowCalendar(false);
 	};
 
-	// Add expense to list
-	const addExpense = () => {
+	// Start editing an expense
+	const editExpense = (index) => {
+		const expense = formValues.expenses[index];
+
+		// Determine category and custom name
+		let category = '';
+		let customName = '';
+
+		if (expenseCategories.includes(expense.name)) {
+			category = expense.name;
+		} else {
+			category = 'Other';
+			customName = expense.name;
+		}
+
+		setCurrentExpense({
+			name: category,
+			customName: customName,
+			amount: expense.amount,
+			dueDate: expense.dueDate
+		});
+
+		setEditingExpenseIndex(index);
+	};
+
+	// Cancel editing
+	const cancelEditing = () => {
+		setEditingExpenseIndex(-1);
+		setCurrentExpense({
+			name: '',
+			customName: '',
+			amount: '',
+			dueDate: ''
+		});
+	};
+
+	// Add or update expense
+	const addOrUpdateExpense = () => {
 		// Get the expense name (use custom if provided, otherwise use dropdown selection)
 		const expenseName = currentExpense.customName.trim() || currentExpense.name;
 
@@ -115,18 +154,35 @@ const Questionnaire = ({ onSubmit, initialStep }) => {
 			return;
 		}
 
-		// Add expense to the list
-		setFormValues({
-			...formValues,
-			expenses: [
-				...formValues.expenses,
-				{
-					name: expenseName,
-					amount: currentExpense.amount,
-					dueDate: currentExpense.dueDate
-				}
-			]
-		});
+		// If editing an existing expense
+		if (editingExpenseIndex >= 0) {
+			const updatedExpenses = [...formValues.expenses];
+			updatedExpenses[editingExpenseIndex] = {
+				name: expenseName,
+				amount: currentExpense.amount,
+				dueDate: currentExpense.dueDate
+			};
+
+			setFormValues({
+				...formValues,
+				expenses: updatedExpenses
+			});
+
+			setEditingExpenseIndex(-1);
+		} else {
+			// Adding a new expense
+			setFormValues({
+				...formValues,
+				expenses: [
+					...formValues.expenses,
+					{
+						name: expenseName,
+						amount: currentExpense.amount,
+						dueDate: currentExpense.dueDate
+					}
+				]
+			});
+		}
 
 		// Reset current expense form
 		setCurrentExpense({
@@ -145,6 +201,11 @@ const Questionnaire = ({ onSubmit, initialStep }) => {
 			...formValues,
 			expenses: updatedExpenses
 		});
+
+		// If removing the expense that's being edited, cancel editing
+		if (index === editingExpenseIndex) {
+			cancelEditing();
+		}
 	};
 
 	// Validate income form before going to step 2
@@ -373,29 +434,47 @@ const Questionnaire = ({ onSubmit, initialStep }) => {
 									<th style={{ textAlign: 'left', padding: '8px' }}>Expense</th>
 									<th style={{ textAlign: 'left', padding: '8px' }}>Amount</th>
 									<th style={{ textAlign: 'left', padding: '8px' }}>Due Date</th>
-									<th style={{ textAlign: 'left', padding: '8px' }}>Action</th>
+									<th style={{ textAlign: 'left', padding: '8px' }}>Actions</th>
 								</tr>
 							</thead>
 							<tbody>
 								{formValues.expenses.map((expense, index) => (
-									<tr key={index} style={{ borderBottom: '1px solid #ddd' }}>
+									<tr key={index} style={{
+										borderBottom: '1px solid #ddd',
+										backgroundColor: index === editingExpenseIndex ? '#f1f8e9' : 'transparent'
+									}}>
 										<td style={{ padding: '8px' }}>{expense.name}</td>
 										<td style={{ padding: '8px' }}>${expense.amount}</td>
 										<td style={{ padding: '8px' }}>{formatDayWithSuffix(expense.dueDate) || 'Not specified'}</td>
 										<td style={{ padding: '8px' }}>
-											<button
-												onClick={() => removeExpense(index)}
-												style={{
-													backgroundColor: '#f44336',
-													color: 'white',
-													border: 'none',
-													borderRadius: '4px',
-													padding: '5px 10px',
-													cursor: 'pointer'
-												}}
-											>
-												Remove
-											</button>
+											<div style={{ display: 'flex', gap: '5px' }}>
+												<button
+													onClick={() => editExpense(index)}
+													style={{
+														backgroundColor: '#2196f3',
+														color: 'white',
+														border: 'none',
+														borderRadius: '4px',
+														padding: '5px 10px',
+														cursor: 'pointer'
+													}}
+												>
+													Edit
+												</button>
+												<button
+													onClick={() => removeExpense(index)}
+													style={{
+														backgroundColor: '#f44336',
+														color: 'white',
+														border: 'none',
+														borderRadius: '4px',
+														padding: '5px 10px',
+														cursor: 'pointer'
+													}}
+												>
+													Remove
+												</button>
+											</div>
 										</td>
 									</tr>
 								))}
@@ -406,8 +485,14 @@ const Questionnaire = ({ onSubmit, initialStep }) => {
 			)}
 
 			{/* Form to add new expense */}
-			<div style={{ border: '1px solid #ddd', borderRadius: '4px', padding: '15px', marginBottom: '20px' }}>
-				<h3>Add New Expense</h3>
+			<div style={{
+				border: '1px solid #ddd',
+				borderRadius: '4px',
+				padding: '15px',
+				marginBottom: '20px',
+				backgroundColor: editingExpenseIndex >= 0 ? '#f1f8e9' : 'transparent'
+			}}>
+				<h3>{editingExpenseIndex >= 0 ? 'Edit Expense' : 'Add New Expense'}</h3>
 				<div style={{ display: 'flex', flexWrap: 'wrap', gap: '15px', marginBottom: '15px' }}>
 					<div style={{ flex: '1 1 250px' }}>
 						<label htmlFor="expenseType">Expense Type</label>
@@ -496,21 +581,58 @@ const Questionnaire = ({ onSubmit, initialStep }) => {
 					</div>
 				</div>
 
-				<button
-					type="button"
-					onClick={addExpense}
-					style={{
-						backgroundColor: '#4caf50',
-						color: 'white',
-						padding: '10px 20px',
-						border: 'none',
-						borderRadius: '4px',
-						cursor: 'pointer',
-						fontSize: '16px'
-					}}
-				>
-					+ Add Expense
-				</button>
+				<div style={{ display: 'flex', gap: '10px' }}>
+					{editingExpenseIndex >= 0 ? (
+						<>
+							<button
+								type="button"
+								onClick={addOrUpdateExpense}
+								style={{
+									backgroundColor: '#4caf50',
+									color: 'white',
+									padding: '10px 20px',
+									border: 'none',
+									borderRadius: '4px',
+									cursor: 'pointer',
+									fontSize: '16px'
+								}}
+							>
+								Update Expense
+							</button>
+							<button
+								type="button"
+								onClick={cancelEditing}
+								style={{
+									backgroundColor: '#9e9e9e',
+									color: 'white',
+									padding: '10px 20px',
+									border: 'none',
+									borderRadius: '4px',
+									cursor: 'pointer',
+									fontSize: '16px'
+								}}
+							>
+								Cancel
+							</button>
+						</>
+					) : (
+						<button
+							type="button"
+							onClick={addOrUpdateExpense}
+							style={{
+								backgroundColor: '#4caf50',
+								color: 'white',
+								padding: '10px 20px',
+								border: 'none',
+								borderRadius: '4px',
+								cursor: 'pointer',
+								fontSize: '16px'
+							}}
+						>
+							+ Add Expense
+						</button>
+					)}
+				</div>
 			</div>
 
 			<div style={{ display: 'flex', justifyContent: 'space-between' }}>

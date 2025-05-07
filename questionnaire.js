@@ -26,6 +26,9 @@ const Questionnaire = ({ onSubmit }) => {
 		dueDate: ''
 	});
 
+	// State for showing calendar
+	const [showCalendar, setShowCalendar] = React.useState(false);
+
 	// Common expense categories for dropdown
 	const expenseCategories = [
 		'Rent/Mortgage',
@@ -64,6 +67,15 @@ const Questionnaire = ({ onSubmit }) => {
 			...currentExpense,
 			[name]: value
 		});
+	};
+
+	// Handle due date selection from calendar
+	const handleDueDateSelect = (day) => {
+		setCurrentExpense({
+			...currentExpense,
+			dueDate: day
+		});
+		setShowCalendar(false);
 	};
 
 	// Add expense to list
@@ -154,6 +166,96 @@ const Questionnaire = ({ onSubmit }) => {
 			depositDates: formValues.depositDates,
 			expenses: formValues.expenses
 		});
+	};
+
+	// Format day number with appropriate suffix (1st, 2nd, 3rd, etc.)
+	const formatDayWithSuffix = (day) => {
+		if (!day) return '';
+
+		const num = parseInt(day);
+		if (isNaN(num)) return day;
+
+		if (num >= 11 && num <= 13) {
+			return num + 'th';
+		}
+
+		switch (num % 10) {
+			case 1: return num + 'st';
+			case 2: return num + 'nd';
+			case 3: return num + 'rd';
+			default: return num + 'th';
+		}
+	};
+
+	// Calendar component for selecting the day of month
+	const DaySelector = () => {
+		// Generate days 1-31 for the calendar
+		const days = Array.from({ length: 31 }, (_, i) => i + 1);
+
+		return (
+			<div style={{
+				position: 'absolute',
+				backgroundColor: 'white',
+				border: '1px solid #ccc',
+				borderRadius: '4px',
+				padding: '10px',
+				boxShadow: '0 4px 8px rgba(0,0,0,0.1)',
+				zIndex: 1000,
+				width: '300px'
+			}}>
+				<div style={{ marginBottom: '10px', display: 'flex', justifyContent: 'space-between' }}>
+					<strong>Select Due Date (Day of Month)</strong>
+					<button
+						onClick={() => setShowCalendar(false)}
+						style={{
+							background: 'none',
+							border: 'none',
+							cursor: 'pointer',
+							fontSize: '18px'
+						}}
+					>
+						×
+					</button>
+				</div>
+				<div style={{
+					display: 'grid',
+					gridTemplateColumns: 'repeat(7, 1fr)',
+					gap: '5px'
+				}}>
+					{days.map(day => (
+						<button
+							key={day}
+							onClick={() => handleDueDateSelect(day.toString())}
+							style={{
+								width: '100%',
+								padding: '8px',
+								border: currentExpense.dueDate === day.toString() ? '2px solid #1976d2' : '1px solid #ddd',
+								borderRadius: '4px',
+								background: currentExpense.dueDate === day.toString() ? '#e3f2fd' : 'white',
+								cursor: 'pointer'
+							}}
+						>
+							{day}
+						</button>
+					))}
+				</div>
+				<div style={{ marginTop: '10px' }}>
+					<button
+						onClick={() => handleDueDateSelect('Last day')}
+						style={{
+							width: '100%',
+							padding: '8px',
+							border: currentExpense.dueDate === 'Last day' ? '2px solid #1976d2' : '1px solid #ddd',
+							borderRadius: '4px',
+							background: currentExpense.dueDate === 'Last day' ? '#e3f2fd' : 'white',
+							cursor: 'pointer'
+						}}
+					>
+						Last day of month
+					</button>
+				</div>
+			</div>
+		);
 	};
 
 	// Render income information form (step 1)
@@ -253,7 +355,7 @@ const Questionnaire = ({ onSubmit }) => {
 									<tr key={index} style={{ borderBottom: '1px solid #ddd' }}>
 										<td style={{ padding: '8px' }}>{expense.name}</td>
 										<td style={{ padding: '8px' }}>${expense.amount}</td>
-										<td style={{ padding: '8px' }}>{expense.dueDate || 'Not specified'}</td>
+										<td style={{ padding: '8px' }}>{formatDayWithSuffix(expense.dueDate) || 'Not specified'}</td>
 										<td style={{ padding: '8px' }}>
 											<button
 												onClick={() => removeExpense(index)}
@@ -345,22 +447,26 @@ const Questionnaire = ({ onSubmit }) => {
 						/>
 					</div>
 
-					<div style={{ flex: '1 1 250px' }}>
+					<div style={{ flex: '1 1 250px', position: 'relative' }}>
 						<label htmlFor="dueDate">Typically Due On (day of month)</label>
-						<input
-							type="text"
-							id="dueDate"
-							name="dueDate"
-							value={currentExpense.dueDate}
-							onChange={handleExpenseChange}
-							placeholder="e.g., 1st, 15th, Last day"
+						<div
+							onClick={() => setShowCalendar(!showCalendar)}
 							style={{
 								width: '100%',
 								padding: '10px',
 								border: '1px solid #ccc',
-								borderRadius: '4px'
+								borderRadius: '4px',
+								backgroundColor: 'white',
+								cursor: 'pointer',
+								display: 'flex',
+								justifyContent: 'space-between',
+								alignItems: 'center'
 							}}
-						/>
+						>
+							<span>{formatDayWithSuffix(currentExpense.dueDate) || 'Select due date'}</span>
+							<span style={{ fontSize: '18px' }}>▾</span>
+						</div>
+						{showCalendar && <DaySelector />}
 					</div>
 				</div>
 

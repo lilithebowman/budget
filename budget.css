@@ -1,0 +1,26 @@
+body {
+	font-family: 'Roboto', sans-serif;
+	margin: 0;
+	padding: 20px;
+}
+
+/* Navigation styles */
+@media (min-width: 769px) {
+	.mobile-menu-toggle {
+		display: none !important;
+	}
+}
+
+@media (max-width: 768px) {
+	.mobile-menu-toggle {
+		display: block !important;
+	}
+	
+	.desktop-menu {
+		display: none !important;
+	}
+	
+	.mobile-menu-open .desktop-menu {
+		display: block !important;
+	}
+}

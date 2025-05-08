@@ -271,6 +271,27 @@ body {
     border: 1px solid var(--color-deposit-border);
 }
 
+/* Date notice styling - renamed from .calendar__february-notice */
+.calendar__date-notice {
+    margin: 10px 0;
+    padding: 8px 12px;
+    background-color: var(--color-primary-light);
+    border-left: 4px solid var(--color-primary);
+    border-radius: 4px;
+    font-size: 14px;
+}
+
+.calendar__date-notice p {
+    margin: 0;
+}
+
+.calendar__moved-deposits {
+	position: absolute;
+	bottom: 1em;
+	font-size: xx-small;
+	color: var(--color-text-secondary);
+}
+
 /* Pie chart styles */
 .pie-chart {
     text-align: center;

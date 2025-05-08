@@ -29,7 +29,7 @@ const BudgetSummary = ({ formData, currentMonth, currentYear, handlePrevMonth, h
 	const totalExpenses = calculateTotalExpenses();
 	const remainingAmount = parseFloat(formData.paychequeAmount) - totalExpenses;
 
-	// Calendar Component with February date correction
+	// Calendar Component with February and 30-day month date correction
 	const Calendar = () => {
 		const monthNames = [
 			'January', 'February', 'March', 'April', 'May', 'June',
@@ -78,37 +78,38 @@ const BudgetSummary = ({ formData, currentMonth, currentYear, handlePrevMonth, h
 
 		const depositDays = parseDepositDates();
 
-		// Check if a day is a deposit day, with February overflow handling
+		// Add helper function to identify 30-day months (April, June, September, November)
+		const isThirtyDayMonth = () => {
+			// Months with 30 days: April (3), June (5), September (8), November (10)
+			return [3, 5, 8, 10].includes(currentMonth);
+		};
+
+		// Check if a day is a deposit day, with February and 30-day month overflow handling
 		const isDepositDay = (day) => {
 			// Direct match for this day
 			if (depositDays.includes(day)) return true;
 
-			// Special case for February (month index 1)
+			// February special case (move days 29+ to last day)
 			if (currentMonth === 1 && day === daysInMonth) {
-				// If this is the last day of February (28th or 29th)
-				// also include any deposit dates that are beyond February's length
+				// If this is the last day of February, also include any deposit dates beyond February's length
 				return depositDays.some(depositDay => depositDay > daysInMonth);
+			}
+
+			// 30-day month special case (move day 31 to day 30)
+			if (isThirtyDayMonth() && day === 30) {
+				// If this is day 30 in a 30-day month, also include any deposit on day 31
+				return depositDays.includes(31);
 			}
 
 			return false;
 		};
 
-		// Calculate expense threshold for color-coding
-		const sortedExpenseAmounts = [...formData.expenses]
-			.map(exp => parseFloat(exp.amount))
-			.sort((a, b) => a - b);
-
-		// Use median as threshold if we have enough expenses
-		let threshold = 100; // Default threshold
-		if (sortedExpenseAmounts.length > 0) {
-			const midIndex = Math.floor(sortedExpenseAmounts.length / 2);
-			threshold = sortedExpenseAmounts[midIndex];
-		}
-
-		// Get expenses for a specific day, with February overflow handling
+		// Get expenses for a specific day, with February and 30-day month overflow handling
 		const getExpensesForDay = (day) => {
 			const isFebruary = currentMonth === 1;
 			const isLastDayOfFebruary = isFebruary && day === daysInMonth;
+			const isThirtyDay = isThirtyDayMonth();
+			const isLastDayOfThirtyDayMonth = isThirtyDay && day === 30;
 
 			return formData.expenses.filter(expense => {
 				// Handle "Last day of month" expenses
@@ -127,8 +128,71 @@ const BudgetSummary = ({ formData, currentMonth, currentYear, handlePrevMonth, h
 					return !isNaN(expenseDay) && expenseDay > daysInMonth;
 				}
 
+				// Special case for 30-day months - expenses for day 31
+				if (isLastDayOfThirtyDayMonth) {
+					const expenseDay = parseInt(expense.dueDate);
+					return !isNaN(expenseDay) && expenseDay === 31;
+				}
+
 				return false;
 			});
+		};
+
+		// Calculate expense threshold for color-coding
+		const sortedExpenseAmounts = [...formData.expenses]
+			.map(exp => parseFloat(exp.amount))
+			.sort((a, b) => a - b);
+
+		// Use median as threshold if we have enough expenses
+		let threshold = 100; // Default threshold
+		if (sortedExpenseAmounts.length > 0) {
+			const midIndex = Math.floor(sortedExpenseAmounts.length / 2);
+			threshold = sortedExpenseAmounts[midIndex];
+		}
+
+		// When rendering calendar days, calculate which expenses are moved
+		const getMovedInfo = (day) => {
+			// For February's last day (28th or 29th)
+			if (currentMonth === 1 && day === daysInMonth) {
+				// Get all moved deposit days
+				const movedDepositDays = depositDays.filter(d => d > daysInMonth);
+
+				// Get all moved expense days
+				const movedExpenses = formData.expenses.filter(expense => {
+					const expenseDay = parseInt(expense.dueDate);
+					return !isNaN(expenseDay) && expenseDay > daysInMonth;
+				});
+
+				if (movedDepositDays.length > 0 || movedExpenses.length > 0) {
+					return {
+						depositDays: movedDepositDays,
+						expenses: movedExpenses,
+						message: "Note: Items from days 29-31 appear on the last day of February."
+					};
+				}
+			}
+
+			// For 30-day month's last day (30th)
+			if (isThirtyDayMonth() && day === 30) {
+				// Only day 31 items are moved
+				const movedDepositDays = depositDays.includes(31) ? [31] : [];
+
+				// Get moved expense days (only day 31)
+				const movedExpenses = formData.expenses.filter(expense => {
+					const expenseDay = parseInt(expense.dueDate);
+					return !isNaN(expenseDay) && expenseDay === 31;
+				});
+
+				if (movedDepositDays.length > 0 || movedExpenses.length > 0) {
+					return {
+						depositDays: movedDepositDays,
+						expenses: movedExpenses,
+						message: "Note: Items from day 31 appear on day 30 in this month."
+					};
+				}
+			}
+
+			return null;
 		};
 
 		// Get color class for a day based on expenses and deposits
@@ -143,28 +207,6 @@ const BudgetSummary = ({ formData, currentMonth, currentYear, handlePrevMonth, h
 
 			const totalAmount = dayExpenses.reduce((sum, exp) => sum + parseFloat(exp.amount), 0);
 			return totalAmount > threshold ? 'calendar__day--large-expense' : 'calendar__day--small-expense';
-		};
-
-		// When rendering calendar days, calculate which expenses are moved
-		const getMovedInfo = (day) => {
-			// Only apply to February's last day
-			if (currentMonth !== 1 || day !== daysInMonth) return null;
-
-			// Get all moved deposit days
-			const movedDepositDays = depositDays.filter(d => d > daysInMonth);
-
-			// Get all moved expense days
-			const movedExpenses = formData.expenses.filter(expense => {
-				const expenseDay = parseInt(expense.dueDate);
-				return !isNaN(expenseDay) && expenseDay > daysInMonth;
-			});
-
-			if (movedDepositDays.length === 0 && movedExpenses.length === 0) return null;
-
-			return {
-				depositDays: movedDepositDays,
-				expenses: movedExpenses
-			};
 		};
 
 		// Function to create Google Calendar add event URL
@@ -282,10 +324,14 @@ const BudgetSummary = ({ formData, currentMonth, currentYear, handlePrevMonth, h
 					})}
 				</div>
 
-				{/* Add notice about February date handling */}
-				{currentMonth === 1 && (
-					<div className="calendar__february-notice">
-						<p>Note: Expenses and deposits scheduled for days 29-31 will appear on the last day of February ({daysInMonth}).</p>
+				{/* Add notice about date handling for months with less than 31 days */}
+				{((currentMonth === 1) || isThirtyDayMonth()) && (
+					<div className="calendar__date-notice">
+						<p>
+							{currentMonth === 1
+								? `Note: Expenses and deposits scheduled for days 29-31 will appear on the last day of February (${daysInMonth}).`
+								: "Note: Expenses and deposits scheduled for day 31 will appear on day 30 in this month."}
+						</p>
 					</div>
 				)}
 

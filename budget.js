@@ -307,6 +307,30 @@ const App = () => {
             return totalAmount > threshold ? '#2196f3' : '#4caf50'; // Blue for larger, green for smaller
         };
 
+        // Function to create Google Calendar add event URL
+        const createGoogleCalendarUrl = (day, expenses) => {
+            // Get the date for the reminder (one day before the expense)
+            const reminderDate = new Date(currentYear, currentMonth, day - 1);
+            const year = reminderDate.getFullYear();
+            const month = (reminderDate.getMonth() + 1).toString().padStart(2, '0');
+            const date = reminderDate.getDate().toString().padStart(2, '0');
+
+            // Format the expense information for the event details
+            let title = "Expense Reminder";
+            let details = "Tomorrow's expenses:";
+
+            expenses.forEach(expense => {
+                details += `\n- ${expense.name}: $${parseFloat(expense.amount).toFixed(2)}`;
+            });
+
+            // Create URL with encoded parameters
+            const encodedTitle = encodeURIComponent(title);
+            const encodedDetails = encodeURIComponent(details);
+            const encodedDate = `${year}${month}${date}`;
+
+            return `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodedTitle}&details=${encodedDetails}&dates=${encodedDate}/${encodedDate}&add=true`;
+        };
+
         return (
             <div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px' }}>
@@ -380,19 +404,38 @@ const App = () => {
                             >
                                 <div style={{ fontWeight: 'bold' }}>{day}</div>
                                 {dayExpenses.length > 0 && (
-                                    <div style={{ fontSize: '12px', marginTop: '5px' }}>
-                                        {dayExpenses.length > 1 ? (
-                                            <div>
-                                                <div style={{ fontWeight: 'bold' }}>${totalAmount.toFixed(2)}</div>
-                                                <div>{dayExpenses.length} expenses</div>
-                                            </div>
-                                        ) : (
-                                            <div>
-                                                <div>{dayExpenses[0].name}</div>
-                                                <div style={{ fontWeight: 'bold' }}>${parseFloat(dayExpenses[0].amount).toFixed(2)}</div>
-                                            </div>
-                                        )}
-                                    </div>
+                                    <>
+                                        <div style={{ fontSize: '12px', marginTop: '5px' }}>
+                                            {dayExpenses.length > 1 ? (
+                                                <div>
+                                                    <div style={{ fontWeight: 'bold' }}>${totalAmount.toFixed(2)}</div>
+                                                    <div>{dayExpenses.length} expenses</div>
+                                                </div>
+                                            ) : (
+                                                <div>
+                                                    <div>{dayExpenses[0].name}</div>
+                                                    <div style={{ fontWeight: 'bold' }}>${parseFloat(dayExpenses[0].amount).toFixed(2)}</div>
+                                                </div>
+                                            )}
+                                        </div>
+
+                                        <a
+                                            href={createGoogleCalendarUrl(day, dayExpenses)}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            style={{
+                                                position: 'absolute',
+                                                bottom: '5px',
+                                                right: '5px',
+                                                fontSize: '16px',
+                                                textDecoration: 'none',
+                                                cursor: 'pointer'
+                                            }}
+                                            title="Add reminder to Google Calendar"
+                                        >
+                                            📅
+                                        </a>
+                                    </>
                                 )}
                             </div>
                         );

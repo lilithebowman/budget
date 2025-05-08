@@ -117,7 +117,7 @@ const App = () => {
 		}
 	};
 
-	// Calendar Component
+	// Calendar Component with CSS classes
 	const Calendar = () => {
 		const monthNames = [
 			'January', 'February', 'March', 'April', 'May', 'June',
@@ -140,7 +140,6 @@ const App = () => {
 		const allCells = [...emptyCells, ...days];
 
 		// Calculate expense threshold for color-coding
-		// Sort expenses by amount for threshold calculation
 		const sortedExpenseAmounts = [...formData.expenses]
 			.map(exp => parseFloat(exp.amount))
 			.sort((a, b) => a - b);
@@ -162,13 +161,13 @@ const App = () => {
 			});
 		};
 
-		// Get color for a day based on expenses
-		const getColorForDay = (day) => {
+		// Get color class for a day based on expenses
+		const getColorClassForDay = (day) => {
 			const dayExpenses = getExpensesForDay(day);
 			if (dayExpenses.length === 0) return '';
 
 			const totalAmount = dayExpenses.reduce((sum, exp) => sum + parseFloat(exp.amount), 0);
-			return totalAmount > threshold ? '#2196f3' : '#4caf50'; // Blue for larger, green for smaller
+			return totalAmount > threshold ? 'calendar__day--large-expense' : 'calendar__day--small-expense';
 		};
 
 		// Function to create Google Calendar add event URL
@@ -197,51 +196,15 @@ const App = () => {
 
 		return (
 			<div>
-				<div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px' }}>
-					<button
-						onClick={handlePrevMonth}
-						style={{
-							background: 'none',
-							border: 'none',
-							fontSize: '24px',
-							cursor: 'pointer'
-						}}
-					>
-						&lt;
-					</button>
+				<div className="calendar__header">
+					<button onClick={handlePrevMonth} className="calendar__nav-button">&lt;</button>
 					<h3 style={{ margin: 0 }}>{monthNames[currentMonth]} {currentYear}</h3>
-					<button
-						onClick={handleNextMonth}
-						style={{
-							background: 'none',
-							border: 'none',
-							fontSize: '24px',
-							cursor: 'pointer'
-						}}
-					>
-						&gt;
-					</button>
+					<button onClick={handleNextMonth} className="calendar__nav-button">&gt;</button>
 				</div>
 
-				<div style={{
-					display: 'grid',
-					gridTemplateColumns: 'repeat(7, 1fr)',
-					gap: '5px',
-					marginBottom: '30px'
-				}}>
+				<div className="calendar__grid">
 					{['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => (
-						<div
-							key={day}
-							style={{
-								textAlign: 'center',
-								fontWeight: 'bold',
-								padding: '10px',
-								backgroundColor: '#f5f5f5',
-								borderRadius: '4px'
-							}}
-						>
-							{day}
-						</div>
+						<div key={day} className="calendar__day-header">{day}</div>
 					))}
 
 					{allCells.map((day, index) => {
@@ -249,36 +212,28 @@ const App = () => {
 							return <div key={`empty-${index}`} style={{ padding: '10px' }}></div>;
 						}
 
-						const color = getColorForDay(day);
+						const colorClass = getColorClassForDay(day);
 						const dayExpenses = getExpensesForDay(day);
 						const totalAmount = dayExpenses.reduce((sum, exp) => sum + parseFloat(exp.amount), 0);
 
 						return (
 							<div
 								key={`day-${day}`}
-								style={{
-									position: 'relative',
-									height: '80px',
-									border: '1px solid #ddd',
-									borderRadius: '4px',
-									padding: '5px',
-									backgroundColor: color ? `${color}20` : '', // 20% opacity
-									borderLeft: color ? `4px solid ${color}` : '1px solid #ddd'
-								}}
+								className={`calendar__day ${colorClass} ${dayExpenses.length > 0 ? 'calendar__day--with-expense' : ''}`}
 							>
-								<div style={{ fontWeight: 'bold' }}>{day}</div>
+								<div className="calendar__day-number">{day}</div>
 								{dayExpenses.length > 0 && (
 									<>
-										<div style={{ fontSize: '12px', marginTop: '5px' }}>
+										<div className="calendar__expense-info">
 											{dayExpenses.length > 1 ? (
 												<div>
-													<div style={{ fontWeight: 'bold' }}>${totalAmount.toFixed(2)}</div>
+													<div className="calendar__total-amount">${totalAmount.toFixed(2)}</div>
 													<div>{dayExpenses.length} expenses</div>
 												</div>
 											) : (
 												<div>
 													<div>{dayExpenses[0].name}</div>
-													<div style={{ fontWeight: 'bold' }}>${parseFloat(dayExpenses[0].amount).toFixed(2)}</div>
+													<div className="calendar__total-amount">${parseFloat(dayExpenses[0].amount).toFixed(2)}</div>
 												</div>
 											)}
 										</div>
@@ -287,14 +242,7 @@ const App = () => {
 											href={createGoogleCalendarUrl(day, dayExpenses)}
 											target="_blank"
 											rel="noopener noreferrer"
-											style={{
-												position: 'absolute',
-												bottom: '5px',
-												right: '5px',
-												fontSize: '16px',
-												textDecoration: 'none',
-												cursor: 'pointer'
-											}}
+											className="calendar__calendar-link"
 											title="Add reminder to Google Calendar"
 										>
 											📅
@@ -306,13 +254,13 @@ const App = () => {
 					})}
 				</div>
 
-				<div style={{ marginBottom: '10px' }}>
-					<div style={{ display: 'flex', alignItems: 'center', marginBottom: '5px' }}>
-						<div style={{ width: '15px', height: '15px', backgroundColor: '#4caf50', marginRight: '5px' }}></div>
+				<div className="calendar__legend">
+					<div className="calendar__legend-item">
+						<div className="calendar__legend-color calendar__legend-color--small"></div>
 						<span>Small Expenses (Less than ${threshold.toFixed(2)})</span>
 					</div>
-					<div style={{ display: 'flex', alignItems: 'center' }}>
-						<div style={{ width: '15px', height: '15px', backgroundColor: '#2196f3', marginRight: '5px' }}></div>
+					<div className="calendar__legend-item">
+						<div className="calendar__legend-color calendar__legend-color--large"></div>
 						<span>Large Expenses (${threshold.toFixed(2)} or more)</span>
 					</div>
 				</div>
@@ -495,58 +443,33 @@ const App = () => {
 				return (
 					<div>
 						<h2>Budget Summary</h2>
-						<div style={{
-							display: 'grid',
-							gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
-							gap: '15px',
-							marginBottom: '20px'
-						}}>
-							<div style={{
-								border: '1px solid #ddd',
-								borderRadius: '4px',
-								padding: '15px',
-								backgroundColor: '#f9f9f9'
-							}}>
-								<h3 style={{ margin: '0 0 10px 0' }}>Income</h3>
-								<p style={{ fontSize: '24px', fontWeight: 'bold', color: '#4caf50', margin: '0' }}>
+						<div className="budget-summary__grid">
+							<div className="budget-summary__card">
+								<h3 className="budget-summary__card-title">Income</h3>
+								<p className="budget-summary__amount budget-summary__amount--income">
 									${parseFloat(formData.paychequeAmount).toFixed(2)}
 								</p>
-								<p style={{ margin: '5px 0 0 0', color: '#666' }}>
+								<p className="budget-summary__details">
 									Deposited: {formData.depositDates}
 								</p>
 							</div>
 
-							<div style={{
-								border: '1px solid #ddd',
-								borderRadius: '4px',
-								padding: '15px',
-								backgroundColor: '#f9f9f9'
-							}}>
-								<h3 style={{ margin: '0 0 10px 0' }}>Expenses</h3>
-								<p style={{ fontSize: '24px', fontWeight: 'bold', color: '#f44336', margin: '0' }}>
+							<div className="budget-summary__card">
+								<h3 className="budget-summary__card-title">Expenses</h3>
+								<p className="budget-summary__amount budget-summary__amount--expense">
 									${totalExpenses.toFixed(2)}
 								</p>
-								<p style={{ margin: '5px 0 0 0', color: '#666' }}>
+								<p className="budget-summary__details">
 									{formData.expenses.length} monthly payments
 								</p>
 							</div>
 
-							<div style={{
-								border: '1px solid #ddd',
-								borderRadius: '4px',
-								padding: '15px',
-								backgroundColor: '#f9f9f9'
-							}}>
-								<h3 style={{ margin: '0 0 10px 0' }}>Remaining</h3>
-								<p style={{
-									fontSize: '24px',
-									fontWeight: 'bold',
-									color: remainingAmount >= 0 ? '#4caf50' : '#f44336',
-									margin: '0'
-								}}>
+							<div className="budget-summary__card">
+								<h3 className="budget-summary__card-title">Remaining</h3>
+								<p className={`budget-summary__amount ${remainingAmount >= 0 ? 'budget-summary__amount--positive' : 'budget-summary__amount--negative'}`}>
 									${remainingAmount.toFixed(2)}
 								</p>
-								<p style={{ margin: '5px 0 0 0', color: '#666' }}>
+								<p className="budget-summary__details">
 									{remainingAmount >= 0 ? 'Available to budget' : 'Deficit'}
 								</p>
 							</div>
@@ -555,13 +478,13 @@ const App = () => {
 						{formData.expenses && formData.expenses.length > 0 && (
 							<div>
 								<h3>Monthly Expenses:</h3>
-								<table style={{ width: '100%', borderCollapse: 'collapse' }}>
+								<table className="budget-summary__table">
 									<thead>
-										<tr style={{ borderBottom: '1px solid #ddd' }}>
-											<th style={{ textAlign: 'left', padding: '8px' }}>Expense</th>
-											<th style={{ textAlign: 'left', padding: '8px' }}>Amount</th>
-											<th style={{ textAlign: 'left', padding: '8px' }}>%</th>
-											<th style={{ textAlign: 'left', padding: '8px' }}>Due Date</th>
+										<tr>
+											<th>Expense</th>
+											<th>Amount</th>
+											<th>%</th>
+											<th>Due Date</th>
 										</tr>
 									</thead>
 									<tbody>
@@ -571,11 +494,11 @@ const App = () => {
 												((parseFloat(expense.amount) / totalExpenses) * 100).toFixed(1);
 
 											return (
-												<tr key={index} style={{ borderBottom: '1px solid #ddd' }}>
-													<td style={{ padding: '8px' }}>{expense.name}</td>
-													<td style={{ padding: '8px' }}>${parseFloat(expense.amount).toFixed(2)}</td>
-													<td style={{ padding: '8px' }}>{percentage}%</td>
-													<td style={{ padding: '8px' }}>{
+												<tr key={index}>
+													<td>{expense.name}</td>
+													<td>${parseFloat(expense.amount).toFixed(2)}</td>
+													<td>{percentage}%</td>
+													<td>{
 														expense.dueDate === 'Last day'
 															? 'Last day of month'
 															: formatDayWithSuffix(expense.dueDate) || 'Not specified'
@@ -594,17 +517,8 @@ const App = () => {
 						<PieChart />
 
 						<button
-							style={{
-								display: 'none',
-								backgroundColor: '#1976d2',
-								color: 'white',
-								padding: '10px 20px',
-								border: 'none',
-								borderRadius: '4px',
-								cursor: 'pointer',
-								fontSize: '16px',
-								marginTop: '20px'
-							}}
+							className="budget-summary__edit-button"
+							style={{ display: 'none' }}
 							onClick={() => setFormData({ ...formData, currentStep: 0 })}>
 							Edit Information
 						</button>
@@ -616,7 +530,7 @@ const App = () => {
 	};
 
 	return (
-		<div style={{ maxWidth: '800px', margin: '0 auto' }}>
+		<div className="container">
 			<h1>Personal Budget Planner</h1>
 			<Navigation
 				formData={formData}

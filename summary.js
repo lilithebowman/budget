@@ -29,7 +29,7 @@ const BudgetSummary = ({ formData, currentMonth, currentYear, handlePrevMonth, h
 	const totalExpenses = calculateTotalExpenses();
 	const remainingAmount = parseFloat(formData.paychequeAmount) - totalExpenses;
 
-	// Calendar Component
+	// Calendar Component with February date correction
 	const Calendar = () => {
 		const monthNames = [
 			'January', 'February', 'March', 'April', 'May', 'June',
@@ -78,9 +78,19 @@ const BudgetSummary = ({ formData, currentMonth, currentYear, handlePrevMonth, h
 
 		const depositDays = parseDepositDates();
 
-		// Check if a day is a deposit day
+		// Check if a day is a deposit day, with February overflow handling
 		const isDepositDay = (day) => {
-			return depositDays.includes(day);
+			// Direct match for this day
+			if (depositDays.includes(day)) return true;
+
+			// Special case for February (month index 1)
+			if (currentMonth === 1 && day === daysInMonth) {
+				// If this is the last day of February (28th or 29th)
+				// also include any deposit dates that are beyond February's length
+				return depositDays.some(depositDay => depositDay > daysInMonth);
+			}
+
+			return false;
 		};
 
 		// Calculate expense threshold for color-coding
@@ -95,13 +105,29 @@ const BudgetSummary = ({ formData, currentMonth, currentYear, handlePrevMonth, h
 			threshold = sortedExpenseAmounts[midIndex];
 		}
 
-		// Get expenses for a specific day
+		// Get expenses for a specific day, with February overflow handling
 		const getExpensesForDay = (day) => {
+			const isFebruary = currentMonth === 1;
+			const isLastDayOfFebruary = isFebruary && day === daysInMonth;
+
 			return formData.expenses.filter(expense => {
+				// Handle "Last day of month" expenses
 				if (expense.dueDate === 'Last day' && day === daysInMonth) {
 					return true;
 				}
-				return parseInt(expense.dueDate) === day;
+
+				// Direct match for specific day
+				if (parseInt(expense.dueDate) === day) {
+					return true;
+				}
+
+				// Special case for February - expenses for days after Feb's last day
+				if (isLastDayOfFebruary) {
+					const expenseDay = parseInt(expense.dueDate);
+					return !isNaN(expenseDay) && expenseDay > daysInMonth;
+				}
+
+				return false;
 			});
 		};
 
@@ -117,6 +143,28 @@ const BudgetSummary = ({ formData, currentMonth, currentYear, handlePrevMonth, h
 
 			const totalAmount = dayExpenses.reduce((sum, exp) => sum + parseFloat(exp.amount), 0);
 			return totalAmount > threshold ? 'calendar__day--large-expense' : 'calendar__day--small-expense';
+		};
+
+		// When rendering calendar days, calculate which expenses are moved
+		const getMovedInfo = (day) => {
+			// Only apply to February's last day
+			if (currentMonth !== 1 || day !== daysInMonth) return null;
+
+			// Get all moved deposit days
+			const movedDepositDays = depositDays.filter(d => d > daysInMonth);
+
+			// Get all moved expense days
+			const movedExpenses = formData.expenses.filter(expense => {
+				const expenseDay = parseInt(expense.dueDate);
+				return !isNaN(expenseDay) && expenseDay > daysInMonth;
+			});
+
+			if (movedDepositDays.length === 0 && movedExpenses.length === 0) return null;
+
+			return {
+				depositDays: movedDepositDays,
+				expenses: movedExpenses
+			};
 		};
 
 		// Function to create Google Calendar add event URL
@@ -158,7 +206,7 @@ const BudgetSummary = ({ formData, currentMonth, currentYear, handlePrevMonth, h
 
 					{allCells.map((day, index) => {
 						if (day === null) {
-							return <div key={`empty-${index}`} style={{ padding: '10px' }}></div>;
+							return <div key={`empty-${index}`} className="calendar__day-empty"></div>;
 						}
 
 						const colorClass = getColorClassForDay(day);
@@ -166,6 +214,7 @@ const BudgetSummary = ({ formData, currentMonth, currentYear, handlePrevMonth, h
 						const totalAmount = dayExpenses.reduce((sum, exp) => sum + parseFloat(exp.amount), 0);
 						const isDeposit = isDepositDay(day);
 						const paychequeAmount = parseFloat(formData.paychequeAmount);
+						const movedInfo = getMovedInfo(day);
 
 						return (
 							<div
@@ -173,6 +222,24 @@ const BudgetSummary = ({ formData, currentMonth, currentYear, handlePrevMonth, h
 								className={`calendar__day ${colorClass} ${(dayExpenses.length > 0 || isDeposit) ? 'calendar__day--with-content' : ''}`}
 							>
 								<div className="calendar__day-number">{day}</div>
+
+								{/* Show moved items notice */}
+								{movedInfo && (
+									<div className="calendar__moved-notice">
+										{movedInfo.depositDays.length > 0 && (
+											<div className="calendar__moved-deposits">
+												<span>Deposits moved from day{movedInfo.depositDays.length > 1 ? 's' : ''}: {movedInfo.depositDays.join(', ')}</span>
+											</div>
+										)}
+										{movedInfo.expenses.length > 0 && (
+											<div className="calendar__moved-expenses">
+												<span>Expenses moved from day{movedInfo.expenses.length > 1 ? 's' : ''}: {
+													[...new Set(movedInfo.expenses.map(e => parseInt(e.dueDate)))].join(', ')
+												}</span>
+											</div>
+										)}
+									</div>
+								)}
 
 								{/* Show deposit amount if it's a deposit day */}
 								{isDeposit && (
@@ -214,6 +281,13 @@ const BudgetSummary = ({ formData, currentMonth, currentYear, handlePrevMonth, h
 						);
 					})}
 				</div>
+
+				{/* Add notice about February date handling */}
+				{currentMonth === 1 && (
+					<div className="calendar__february-notice">
+						<p>Note: Expenses and deposits scheduled for days 29-31 will appear on the last day of February ({daysInMonth}).</p>
+					</div>
+				)}
 
 				<div className="calendar__legend">
 					<div className="calendar__legend-item">

@@ -79,8 +79,8 @@ const MultiDateCalendar = ({
 						key={day}
 						onClick={() => handleDaySelect(day)}
 						className={`calendar-selector__day ${allowMultiple
-								? selectedDates.includes(day) ? 'calendar-selector__day--selected' : ''
-								: selectedDates === day ? 'calendar-selector__day--selected' : ''
+							? selectedDates.includes(day) ? 'calendar-selector__day--selected' : ''
+							: selectedDates === day ? 'calendar-selector__day--selected' : ''
 							}`}
 						type="button"
 					>
@@ -247,12 +247,8 @@ const DateSelector = ({
 	);
 };
 
-// Export both components
-const Calendar = {
+// Instead of ES module exports, make components globally accessible
+window.Calendar = {
 	MultiDateCalendar,
 	DateSelector
 };
-
-// Export default and named exports for flexibility
-export default Calendar;
-export { MultiDateCalendar, DateSelector };

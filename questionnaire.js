@@ -1,3 +1,5 @@
+const { DateSelector } = window.Calendar;
+
 // Questionnaire component for collecting initial budget information
 
 const Questionnaire = ({ onSubmit, initialStep }) => {
@@ -220,8 +222,8 @@ const Questionnaire = ({ onSubmit, initialStep }) => {
 		}
 
 		// Validate deposit dates (must not be empty)
-		if (!formValues.depositDates.trim()) {
-			newErrors.depositDates = 'Please enter your typical deposit dates';
+		if (!formValues.depositDates || formValues.depositDates.length === 0) {
+			newErrors.depositDates = 'Please select at least one deposit date';
 			valid = false;
 		}
 
@@ -377,26 +379,26 @@ const Questionnaire = ({ onSubmit, initialStep }) => {
 				</div>
 
 				<div style={{ marginBottom: '20px' }}>
-					<label htmlFor="depositDates">When are your paycheques typically deposited each month?</label>
-					<input
-						type="text"
-						id="depositDates"
-						name="depositDates"
+					<DateSelector
+						label="When are your paycheques typically deposited each month?"
 						value={formValues.depositDates}
-						onChange={handleChange}
-						placeholder="e.g., 1st and 15th, every Friday, etc."
-						style={{
-							width: '100%',
-							padding: '10px',
-							border: errors.depositDates ? '1px solid red' : '1px solid #ccc',
-							borderRadius: '4px'
+						onChange={(dates) => {
+							setFormValues({
+								...formValues,
+								depositDates: dates
+							});
+							// Clear any errors
+							if (errors.depositDates) {
+								setErrors({
+									...errors,
+									depositDates: ''
+								});
+							}
 						}}
+						allowMultiple={true}
+						placeholder="Select deposit dates"
+						error={errors.depositDates || false}
 					/>
-					{errors.depositDates && (
-						<div style={{ color: 'red', fontSize: '14px', marginTop: '5px' }}>
-							{errors.depositDates}
-						</div>
-					)}
 				</div>
 
 				<button
@@ -558,26 +560,20 @@ const Questionnaire = ({ onSubmit, initialStep }) => {
 						/>
 					</div>
 
-					<div style={{ flex: '1 1 250px', position: 'relative' }}>
-						<label htmlFor="dueDate">Typically Due On (day of month)</label>
-						<div
-							onClick={() => setShowCalendar(!showCalendar)}
-							style={{
-								width: '100%',
-								padding: '10px',
-								border: '1px solid #ccc',
-								borderRadius: '4px',
-								backgroundColor: 'white',
-								cursor: 'pointer',
-								display: 'flex',
-								justifyContent: 'space-between',
-								alignItems: 'center'
+					<div style={{ flex: '1 1 250px' }}>
+						<DateSelector
+							label="Typically Due On (day of month)"
+							value={currentExpense.dueDate}
+							onChange={(date) => {
+								setCurrentExpense({
+									...currentExpense,
+									dueDate: date
+								});
 							}}
-						>
-							<span>{formatDayWithSuffix(currentExpense.dueDate) || 'Select due date'}</span>
-							<span style={{ fontSize: '18px' }}>▾</span>
-						</div>
-						{showCalendar && <DaySelector />}
+							allowMultiple={false}
+							showLastDay={true}
+							placeholder="Select due date"
+						/>
 					</div>
 				</div>
 

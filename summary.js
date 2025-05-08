@@ -51,6 +51,38 @@ const BudgetSummary = ({ formData, currentMonth, currentYear, handlePrevMonth, h
 		// Combine empty cells and days
 		const allCells = [...emptyCells, ...days];
 
+		// Extract deposit days from formData.depositDates string
+		const parseDepositDates = () => {
+			if (!formData.depositDates) return [];
+
+			// If depositDates is already an array, return it
+			if (Array.isArray(formData.depositDates)) return formData.depositDates;
+
+			// Otherwise parse from string format (e.g., "1st, 15th")
+			const dateString = formData.depositDates;
+			const depositDays = [];
+
+			// Match all numbers in the string
+			const matches = dateString.match(/\d+/g);
+			if (matches) {
+				matches.forEach(match => {
+					const day = parseInt(match);
+					if (!isNaN(day) && day >= 1 && day <= 31) {
+						depositDays.push(day);
+					}
+				});
+			}
+
+			return depositDays;
+		};
+
+		const depositDays = parseDepositDates();
+
+		// Check if a day is a deposit day
+		const isDepositDay = (day) => {
+			return depositDays.includes(day);
+		};
+
 		// Calculate expense threshold for color-coding
 		const sortedExpenseAmounts = [...formData.expenses]
 			.map(exp => parseFloat(exp.amount))
@@ -73,8 +105,13 @@ const BudgetSummary = ({ formData, currentMonth, currentYear, handlePrevMonth, h
 			});
 		};
 
-		// Get color class for a day based on expenses
+		// Get color class for a day based on expenses and deposits
 		const getColorClassForDay = (day) => {
+			// First check if it's a deposit day
+			if (isDepositDay(day)) {
+				return 'calendar__day--deposit';
+			}
+
 			const dayExpenses = getExpensesForDay(day);
 			if (dayExpenses.length === 0) return '';
 
@@ -127,13 +164,25 @@ const BudgetSummary = ({ formData, currentMonth, currentYear, handlePrevMonth, h
 						const colorClass = getColorClassForDay(day);
 						const dayExpenses = getExpensesForDay(day);
 						const totalAmount = dayExpenses.reduce((sum, exp) => sum + parseFloat(exp.amount), 0);
+						const isDeposit = isDepositDay(day);
+						const paychequeAmount = parseFloat(formData.paychequeAmount);
 
 						return (
 							<div
 								key={`day-${day}`}
-								className={`calendar__day ${colorClass} ${dayExpenses.length > 0 ? 'calendar__day--with-expense' : ''}`}
+								className={`calendar__day ${colorClass} ${(dayExpenses.length > 0 || isDeposit) ? 'calendar__day--with-content' : ''}`}
 							>
 								<div className="calendar__day-number">{day}</div>
+
+								{/* Show deposit amount if it's a deposit day */}
+								{isDeposit && (
+									<div className="calendar__deposit-info">
+										<div className="calendar__deposit-label">Deposit</div>
+										<div className="calendar__deposit-amount">+${paychequeAmount.toFixed(2)}</div>
+									</div>
+								)}
+
+								{/* Show expenses */}
 								{dayExpenses.length > 0 && (
 									<>
 										<div className="calendar__expense-info">
@@ -167,6 +216,10 @@ const BudgetSummary = ({ formData, currentMonth, currentYear, handlePrevMonth, h
 				</div>
 
 				<div className="calendar__legend">
+					<div className="calendar__legend-item">
+						<div className="calendar__legend-color calendar__legend-color--deposit"></div>
+						<span>Deposit Day</span>
+					</div>
 					<div className="calendar__legend-item">
 						<div className="calendar__legend-color calendar__legend-color--small"></div>
 						<span>Small Expenses (Less than ${threshold.toFixed(2)})</span>
